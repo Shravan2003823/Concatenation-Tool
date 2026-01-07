@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us</title>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #ffecd2, #fcb69f);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+        }
+        .contact-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #ff7e5f;
+        }
+        p {
+            margin: 10px 0;
+        }
+        .email {
+            font-weight: bold;
+            color: #ff7e5f;
+            text-decoration: none;
+        }
+        .email:hover {
+            text-decoration: underline;
+        }
+        select, button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+.page-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .page-buttons a {
+            background-color: #00796b;
+            color: white;
+            padding: 5px 15px;
+            margin: 8px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .page-buttons a:hover {
+            background-color: #feb47b;
+        }
+    </style>
+</head>
+<body>
+
+    <section class="contact-container">
+        <h1>Contact Us <div class="page-buttons">
+        <a href="Index.html">Home</a>
+</div></h1>
+        <p>If you have any concerns or queries, please select a name for "To" and optionally for "CC", then click "Send Email":</p>
+        <label for="toSelect">To:</label>
+        <select id="toSelect">
+            <option value="ram.raj@sage.com">Ram Raj</option>
+            <option value="shravan.kumar@sage.com">Shravan Kumar</option>
+            <option value="deepak.mankotia@sage.com">Deepak Mankotia</option>
+            <option value="sunil.kumar@sage.com">Sunil Kumar</option>
+            <option value="sushil.anot@sage.com">Sushil Anot</option>
+        </select>
+        <br>
+        <label for="ccSelect">CC:</label>
+        <select id="ccSelect" multiple>
+            <option value="ram.raj@sage.com">Ram Raj</option>
+            <option value="shravan.kumar@sage.com">Shravan Kumar</option>
+            <option value="deepak.mankotia@sage.com">Deepak Mankotia</option>
+            <option value="sunil.kumar@sage.com">Sunil Kumar</option>
+            <option value="sushil.anot@sage.com">Sushil Anot</option>
+        </select>
+        <br>
+        <button onclick="sendEmail()">Send Email</button>
+    </section>
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#ccSelect').select2({
+                placeholder: "Select CC recipients",
+                allowClear: true
+            });
+
+            $('#toSelect').val('ram.raj@sage.com'); // Set default email in "To" field
+
+            $('#toSelect').on('change', function() {
+                var selectedTo = $(this).val();
+                $('#ccSelect option').prop('disabled', false); // Enable all options
+                $('#ccSelect').val(null).trigger('change'); // Clear CC selection
+                $('#ccSelect option[value="' + selectedTo + '"]').prop('disabled', true); // Disable selected "To" option in "CC"
+            }).trigger('change'); // Trigger change event on page load to apply initial state
+        });
+
+        function sendEmail() {
+            var toEmail = document.getElementById('toSelect').value;
+            var ccEmails = $('#ccSelect').val().join(',');
+            var mailtoLink = 'mailto:' + toEmail;
+            if (ccEmails) {
+                mailtoLink += '?cc=' + ccEmails;
+            }
+            window.location.href = mailtoLink;
+        }
+    </script>
+</body>
+</html>
+	

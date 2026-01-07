@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Upload and Display</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e0f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background: #00796b;
+            z-index: 1000;
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            text-align: center;
+            color: white;
+        }
+        h2 {
+            text-align: center;
+            color: #00796b;
+        }
+        .upload-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .custom-file-upload {
+            border: 1px solid #ccc;
+            display: inline-block;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #004d40;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .custom-file-upload:hover {
+            background-color: #004d40;
+        }
+        .button-group {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #004d40;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #004d40;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #00796b;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #e0f2f1;
+        }
+        tr:hover {
+            background-color: #b2dfdb;
+        }
+.page-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .page-buttons a {
+            background-color: #004d40;
+            color: white;
+            padding: 8px 18px;
+            margin: 8px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .page-buttons a:hover {
+            background-color: #feb47b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+    <div class="sticky-header">
+        <h2>Upload Excel File</h2>
+        <div class="upload-box">
+            <label for="upload" class="custom-file-upload">
+                Choose File
+            </label>
+            <input type="file" id="upload" accept=".xlsx, .xls" />
+        </div>
+<div class="page-buttons">
+        <a href="Index.html">Home</a>
+</div>
+        <div class="button-group">
+            <button onclick="concatenateTransactions()">Concatenate Transactions</button>
+            <button onclick="downloadExcel()">Download Updated Excel</button>
+            <button id="addPageNumbers">Add Page Numbers</button>
+        </div>
+    </div>
+    <table id="excelTable">
+        <thead>
+            <tr id="tableHeader">
+                <th>Date</th>
+                <th>Transaction</th>
+                <th>Money out (£)</th>
+                <th>Money in (£)</th>
+                <th>Balance (£)</th>
+                <th>Concatenated Transactions</th>
+                <th>Page Number</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+<script>
+document.getElementById('upload').addEventListener('change', handleFile, false);
+document.getElementById('addPageNumbers').addEventListener('click', addPageNumbers);
+
+let excelData = [];
+
+function handleFile(e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        displayTable(excelData);
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function displayTable(data) {
+    const tableBody = document.getElementById('tableBody');
+
+    // Clear existing table
+    tableBody.innerHTML = '';
+
+    // Create table rows
+    for (let i = 1; i < data.length; i++) {
+        const row = document.createElement('tr');
+        const dateCell = document.createElement('td');
+        const transactionCell = document.createElement('td');
+        const moneyOutCell = document.createElement('td');
+        const moneyInCell = document.createElement('td');
+        const balanceCell = document.createElement('td');
+        const newColumnCell = document.createElement('td');
+        const pageNumberCell = document.createElement('td');
+
+        dateCell.textContent = data[i][0] !== null && data[i][0] !== undefined ? data[i][0] : '';
+        transactionCell.textContent = data[i][1] !== null && data[i][1] !== undefined ? data[i][1] : '';
+        moneyOutCell.textContent = data[i][2] !== null && data[i][2] !== undefined ? data[i][2] : '';
+        moneyInCell.textContent = data[i][3] !== null && data[i][3] !== undefined ? data[i][3] : '';
+        balanceCell.textContent = data[i][4] !== null && data[i][4] !== undefined ? data[i][4] : '';
+        newColumnCell.textContent = ''; // Placeholder for concatenated transactions
+        pageNumberCell.textContent = ''; // Placeholder for page number
+
+        row.appendChild(dateCell);
+        row.appendChild(transactionCell);
+        row.appendChild(moneyOutCell);
+        row.appendChild(moneyInCell);
+        row.appendChild(balanceCell);
+        row.appendChild(newColumnCell);
+        row.appendChild(pageNumberCell);
+
+        tableBody.appendChild(row);
+    }
+}
+
+function addPageNumbers() {
+    const tableBody = document.getElementById('tableBody');
+    const rows = tableBody.getElementsByTagName('tr');
+    let pageNumber = 1;
+    let previousRowWasEmpty = false;
+
+    for (let i = 0; i < rows.length; i++) {
+        const transactionCell = rows[i].getElementsByTagName('td')[1];
+        const pageNumberCell = rows[i].getElementsByTagName('td')[6];
+        const isEmptyRow = Array.from(rows[i].getElementsByTagName('td')).slice(0, 5).every(cell => !cell.textContent.trim());
+
+        if (isEmptyRow) {
+            if (!previousRowWasEmpty) {
+                pageNumber++;
+            }
+            previousRowWasEmpty = true;
+        } else {
+            pageNumberCell.textContent = pageNumber;
+            previousRowWasEmpty = false;
+        }
+    }
+}
+
+function concatenateTransactions() {
+    const tableBody = document.getElementById('tableBody');
+    const rows = tableBody.getElementsByTagName('tr');
+    let concatenatedTransactions = '';
+    let isConcatenating = false;
+
+    for (let i = 0; i < rows.length; i++) {
+        const debitCell = rows[i].getElementsByTagName('td')[2]; // Assuming debit is in the 3rd column (index 2)
+        const creditCell = rows[i].getElementsByTagName('td')[3]; // Assuming credit is in the 4th column (index 3)
+        const transactionCell = rows[i].getElementsByTagName('td')[1];
+        const newColumnCell = rows[i].getElementsByTagName('td')[5];
+
+        // Check if the entire row is blank
+        const isRowBlank = Array.from(rows[i].getElementsByTagName('td')).every(cell => cell.textContent === '');
+
+        if (isRowBlank) {
+            continue; // Skip further processing for this row but do not reset concatenation
+        }
+
+        // Check if debit or credit cell is a valid number
+        const debitValue = debitCell.textContent;
+        const creditValue = creditCell.textContent;
+        const isDebitOrCreditValid = isNumeric(debitValue) || isNumeric(creditValue);
+
+        if (isDebitOrCreditValid) {
+            if (isConcatenating) {
+                // Populate the concatenated transactions for the previous debit/credit value
+                for (let j = i - 1; j >= 0; j--) {
+                    const prevDebitCell = rows[j].getElementsByTagName('td')[2];
+                    const prevCreditCell = rows[j].getElementsByTagName('td')[3];
+                    const prevNewColumnCell = rows[j].getElementsByTagName('td')[5];
+                    if (isNumeric(prevDebitCell.textContent) || isNumeric(prevCreditCell.textContent)) {
+                        prevNewColumnCell.textContent = concatenatedTransactions.trim();
+                        break;
+                    }
+                }
+            }
+            concatenatedTransactions = transactionCell.textContent;
+            isConcatenating = true;
+        } else {
+            concatenatedTransactions += ' ' + transactionCell.textContent;
+        }
+    }
+
+    // Populate the concatenated transactions for the last debit/credit value
+    for (let i = rows.length - 1; i >= 0; i--) {
+        const debitCell = rows[i].getElementsByTagName('td')[2];
+        const creditCell = rows[i].getElementsByTagName('td')[3];
+        const newColumnCell = rows[i].getElementsByTagName('td')[5];
+        if (isNumeric(debitCell.textContent) || isNumeric(creditCell.textContent)) {
+            newColumnCell.textContent = concatenatedTransactions.trim();
+            break;
+        }
+    }
+}
+
+function isNumeric(value) {
+    return /\d/.test(value); // Checks if there is at least one digit in the value
+}
+
+
+
+function downloadExcel() {
+    const updatedData = excelData.map((row, index) => {
+        if (index === 0) {
+            // Add headers for Concatenated Transactions and Page Number
+            return [...row, 'Concatenated Transactions', 'Page Number'];
+        } else {
+            const tableRow = document.getElementById('tableBody').getElementsByTagName('tr')[index - 1];
+            const concatenatedValue = tableRow.getElementsByTagName('td')[5].textContent;
+            const pageNumberValue = tableRow.getElementsByTagName('td')[6].textContent;
+
+            // Ensure the concatenated value and page number are added to the correct columns
+            const newRow = [...row];
+            newRow[5] = concatenatedValue; // Assuming the 6th column is where you want the concatenated value
+            newRow[6] = pageNumberValue; // Assuming the 7th column is where you want the page number
+
+            return newRow;
+        }
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(updatedData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+    XLSX.writeFile(wb, 'updated_excel.xlsx');
+}
+</script>
+</body>
+</html>

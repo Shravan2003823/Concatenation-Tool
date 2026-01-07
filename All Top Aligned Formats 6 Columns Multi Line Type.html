@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel File Upload and Concatenate Columns</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .container {
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            outline: none;
+            color: #fff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px #999;
+            margin: 10px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button:active {
+            background-color: #45a049;
+            box-shadow: 0 2px #666;
+            transform: translateY(2px);
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .custom-file-upload {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            outline: none;
+            color: #fff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px #999;
+            margin: 10px;
+        }
+        .custom-file-upload:hover {
+            background-color: #45a049;
+        }
+        .custom-file-upload:active {
+            background-color: #45a049;
+            box-shadow: 0 2px #666;
+            transform: translateY(2px);
+        }
+.page-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .page-buttons a {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 18px;
+            margin: 8px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .page-buttons a:hover {
+            background-color: #feb47b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Excel File Upload and Concatenate Columns</h1>
+        <div class="button-container">
+            <label for="upload" class="custom-file-upload">Choose File</label>
+            <input type="file" id="upload" accept=".xlsx, .xls" />
+            <button id="concatenate" class="button">Concatenate</button>
+            <button id="download" class="button">Download Updated Excel</button>
+            <button id="add-page-number" class="button">Add Page Number</button>
+        </div>
+<div class="page-buttons">
+        <a href="Index.html">Home</a>
+</div>
+        <table id="data-table">
+            <thead>
+                <tr id="table-header"></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <script>
+    let workbook;
+    document.getElementById('upload').addEventListener('change', handleFile, false);
+    document.getElementById('concatenate').addEventListener('click', concatenateColumns, false);
+    document.getElementById('download').addEventListener('click', downloadExcel, false);
+    document.getElementById('add-page-number').addEventListener('click', addPageNumbers, false);
+
+    function handleFile(e) {
+        const files = e.target.files;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const data = new Uint8Array(event.target.result);
+            workbook = XLSX.read(data, { type: 'array' });
+            displayData();
+        };
+        reader.readAsArrayBuffer(files[0]);
+    }
+
+    function displayData() {
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+        const tableHeader = document.querySelector('#table-header');
+        const tableBody = document.querySelector('#data-table tbody');
+        tableHeader.innerHTML = '';
+        tableBody.innerHTML = '';
+
+        // Create table headers
+        const headers = json[0];
+        if (!headers.includes('Concatenated')) {
+            headers.push('Concatenated'); // Add header for the concatenated column if not present
+        }
+        if (!headers.includes('Page Number')) {
+            headers.push('Page Number'); // Add header for the page number column if not present
+        }
+        headers.forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            tableHeader.appendChild(th);
+        });
+
+        // Create table rows
+        json.slice(1).forEach(row => {
+            const tr = document.createElement('tr');
+            row.forEach(cell => {
+                const td = document.createElement('td');
+                td.textContent = cell;
+                tr.appendChild(td);
+            });
+            if (row.length < headers.length) {
+                for (let i = row.length; i < headers.length; i++) {
+                    const td = document.createElement('td'); // Add empty cells for new columns
+                    tr.appendChild(td);
+                }
+            }
+            tableBody.appendChild(tr);
+        });
+    }
+
+    let isConcatenated = false;
+
+    function concatenateColumns() {
+    if (isConcatenated) {
+        return; // Exit the function if concatenation has already been done
+    }
+
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+    if (!json[0].includes('Concatenated')) {
+        json[0].push('Concatenated'); // Add header for the new column if not present
+    }
+
+    let currentTypeConcat = ""; // Initialize for concatenating 'Type' column values
+    let currentDetailsConcat = ""; // Initialize for concatenating 'Details' column values
+    let lastDebitCreditRow = -1; // Track the last row with a debit or credit value
+
+    for (let i = 1; i < json.length; i++) {
+        if (isNumeric(json[i][3]) || isNumeric(json[i][4])) { // Check for numeric values
+            if (lastDebitCreditRow !== -1) {
+                json[lastDebitCreditRow][json[0].length - 1] = currentTypeConcat + " " + currentDetailsConcat;
+            }
+            lastDebitCreditRow = i;
+            currentTypeConcat = ""; // Reset for the next set of rows
+            currentDetailsConcat = ""; // Reset for the next set of rows
+        }
+
+        if (json[i][1]) { // Assuming 'Type' is the second column
+            if (currentTypeConcat) {
+                currentTypeConcat += " ";
+            }
+            currentTypeConcat += json[i][1];
+        }
+        if (json[i][2]) { // Assuming 'Details' is the third column
+            if (currentDetailsConcat) {
+                currentDetailsConcat += " ";
+            }
+            currentDetailsConcat += json[i][2];
+        }
+
+        if (!json[i].includes('')) {
+            json[i].push(""); // Push an empty string for rows without 'Debit' or 'Credit' values
+        }
+    }
+
+    // Handle the last set of concatenated values if any
+    if (lastDebitCreditRow !== -1) {
+        json[lastDebitCreditRow][json[0].length - 1] = currentTypeConcat + " " + currentDetailsConcat;
+    }
+
+    // Ensure blank cells remain blank
+    for (let i = 0; i < json.length; i++) {
+        for (let j = 0; j < json[i].length; j++) {
+            if (json[i][j] === "") {
+                json[i][j] = null; // Set blank cells to null
+            }
+        }
+    }
+
+    const newWorksheet = XLSX.utils.json_to_sheet(json, { skipHeader: true });
+    workbook.Sheets[sheetName] = newWorksheet;
+    displayData();
+
+    isConcatenated = true; // Set the flag to true after concatenation
+}
+
+function isNumeric(value) {
+    return /\d/.test(value); // Checks if there is at least one digit in the value
+}
+
+function addPageNumbers() {
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+
+    // Add "Page Number" header if it doesn't exist
+    if (!json[0].includes('Page Number')) {
+        json[0].push('Page Number'); // Add header for the new column if not present
+    }
+
+    let pageNumber = 1;
+    for (let i = 1; i < json.length; i++) {
+        if (json[i].every(cell => cell === "")) { // Check if the entire row is blank
+            pageNumber++;
+        }
+        json[i][json[0].length - 1] = pageNumber; // Add page number to the correct column
+    }
+
+    // Ensure blank cells remain blank
+    for (let i = 0; i < json.length; i++) {
+        for (let j = 0; j < json[i].length; j++) {
+            if (json[i][j] === "") {
+                json[i][j] = null; // Set blank cells to null
+            }
+        }
+    }
+
+    const newWorksheet = XLSX.utils.json_to_sheet(json, { skipHeader: true });
+    workbook.Sheets[sheetName] = newWorksheet;
+    displayData();
+}
+
+
+    function downloadExcel() {
+        const newWorkbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(newWorkbook, workbook.Sheets[workbook.SheetNames[0]], 'Sheet1');
+        XLSX.writeFile(newWorkbook, 'updated_data.xlsx');
+    }
+</script>
+
+</body>
+</html>
